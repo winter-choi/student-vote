@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>학생회 투표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --k:#111; --w:#fff; --g:#777; --l:#ddd; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--w);color:var(--k);
+    font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;-webkit-user-select:none;user-select:none}
+  input,textarea{-webkit-user-select:text;user-select:text;font:inherit;color:inherit}
+  h1,h2,h3,p{margin:0;font-weight:500}
+  button{font:inherit;cursor:pointer;background:var(--w);color:var(--k);border:1px solid var(--k);border-radius:0;padding:10px 20px}
+  button:hover{background:#f3f3f3}
+  button.fill{background:var(--k);color:var(--w)}
+  button.fill:hover{background:#333}
+  button.big{font-size:20px;padding:14px 32px}
+  button.text{border:0;padding:6px 8px;color:var(--g);background:transparent}
+  button.text:hover{color:var(--k);background:transparent}
+
+  .screen{display:none;min-height:100vh}
+  .screen.on{display:flex;flex-direction:column}
+
+  /* 설정 */
+  #setup{align-items:center;padding:64px 24px 80px}
+  .page{width:100%;max-width:760px}
+  .page > h1{font-size:44px;text-align:center}
+  .page > .lead{text-align:center;color:var(--g);margin-top:12px;font-size:17px;font-weight:400}
+  .sec{margin-top:56px}
+  .sec > h2{font-size:22px;padding-bottom:10px;border-bottom:1px solid var(--k)}
+  .sec > .note{color:var(--g);font-size:14px;margin-top:10px;font-weight:400}
+  .field{margin-top:20px}
+  .field label{display:block;font-size:15px;margin-bottom:8px}
+  .field .note{color:var(--g);font-size:13px;margin-top:6px}
+  input[type=text],input[type=number],input[type=password],textarea{width:100%;border:1px solid var(--k);border-radius:0;padding:10px 12px;font-size:17px;background:var(--w)}
+  textarea{min-height:180px;line-height:1.7;resize:vertical}
+  input:focus,textarea:focus{outline:2px solid var(--k);outline-offset:-2px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media (max-width:640px){ .two,.three{grid-template-columns:1fr} }
+  .office{border:1px solid var(--l);padding:16px 18px;margin-top:16px}
+  .office .head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .office .head input{flex:1;font-size:18px}
+  .office .count{color:var(--g);font-size:13px;margin-top:6px}
+  .check{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:16px}
+  .check input{width:18px;height:18px;accent-color:#111}
+  .err{color:#c00;min-height:24px;margin-top:20px;text-align:center}
+  .actions{display:flex;justify-content:center;gap:12px;margin-top:12px}
+
+  /* 가운데 화면 공통 */
+  .mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;gap:24px}
+  .mid h1{font-size:44px}
+  .mid .sub{color:var(--g);font-size:18px;font-weight:400}
+  .sum{border-top:1px solid var(--k);border-bottom:1px solid var(--k);width:min(640px,100%);text-align:left}
+  .sum div{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:12px 4px;border-top:1px solid var(--l);font-size:16px}
+  .sum div:first-child{border-top:0}
+  .sum dt{color:var(--g)} .sum dd{margin:0}
+  ol.how{text-align:left;font-size:24px;line-height:2;margin:0;padding-left:1.4em}
+
+  /* 투표 */
+  #vote{height:100vh;overflow:hidden;padding:28px 36px 0;position:relative}
+  .vtop{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--k);padding-bottom:12px}
+  .vtop h1{font-size:clamp(28px,3.4vw,44px)}
+  .vtop .step{color:var(--g);font-size:16px}
+  .grid{flex:1;min-height:0;display:grid;gap:clamp(8px,1.2vw,16px);grid-auto-rows:minmax(0,300px);align-content:center;padding:20px 0 16px}
+  .cand{border:2px solid var(--k);background:var(--w);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:clamp(2px,1vh,10px);padding:6px;min-height:0}
+  .cand:hover{background:#f3f3f3}
+  .cand .n{font-size:clamp(30px,min(5vw,8vh),72px);font-weight:700;line-height:1}
+  .cand .nm{font-size:clamp(20px,min(2.8vw,4.6vh),40px);font-weight:500;line-height:1.2;word-break:keep-all}
+  .cand.on{background:var(--k);color:var(--w)}
+  .cand.blank .n{font-size:clamp(20px,min(2.6vw,4vh),34px);font-weight:500}
+  .bar{position:absolute;left:0;right:0;bottom:0;background:var(--w);border-top:2px solid var(--k);padding:16px 36px;
+    display:none;justify-content:space-between;align-items:center;gap:16px}
+  .bar.on{display:flex}
+  .bar p{font-size:clamp(22px,2.4vw,32px)}
+  .bar .btns{display:flex;gap:10px}
+  .bar button{font-size:clamp(18px,1.8vw,24px);padding:14px 30px}
+  .vfoot{display:flex;justify-content:space-between;align-items:center;color:var(--g);font-size:13px;padding:6px 0 12px}
+
+  /* 완료 */
+  #done{background:var(--k);color:var(--w)}
+  #done h1{font-size:clamp(48px,7vw,96px)}
+  #done .sub{color:#aaa;font-size:24px}
+  .wait{width:min(420px,70vw);height:4px;background:#444}
+  .wait i{display:block;height:100%;width:0;background:var(--w)}
+
+  /* 결과 */
+  #result{height:100vh;overflow:hidden;padding:32px 40px}
+  .rtop{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid var(--k);padding-bottom:12px;gap:16px;flex-wrap:wrap}
+  .rtop h1{font-size:clamp(26px,3vw,40px)}
+  .tabs{display:flex;gap:0}
+  .tabs button{border:1px solid var(--k);margin-left:-1px}
+  .tabs button.cur{background:var(--k);color:var(--w)}
+  .rows{flex:1;min-height:0;display:grid;align-content:safe center;padding:18px 0;row-gap:var(--gap,10px);column-gap:56px;--rh:70px;overflow-y:auto;overflow-x:hidden}
+  .rows.two{grid-auto-flow:column;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .r{display:grid;grid-template-columns:minmax(150px,280px) minmax(60px,1fr) 90px;align-items:center;gap:20px;height:var(--rh);min-width:0}
+  .rows.two .r{grid-template-columns:minmax(130px,220px) minmax(40px,1fr) 70px;gap:14px}
+  .r .who{overflow:hidden;text-overflow:ellipsis}
+  .r .who{white-space:nowrap;font-size:clamp(16px,calc(var(--rh)*.4),30px)}
+  .r .who b{display:inline-block;min-width:1.6em;font-weight:700}
+  .r .track{height:clamp(10px,calc(var(--rh)*.38),34px);border:1px solid var(--k)}
+  .r .fill{height:100%;width:0;background:var(--k)}
+  .r .c{text-align:right;font-size:clamp(18px,calc(var(--rh)*.5),44px);font-variant-numeric:tabular-nums}
+  .r.out .c,.r.out .who{color:var(--g)}
+  .r.win .who,.r.win .c{font-weight:700}
+  .r.win .who::after{content:"당선";font-size:.6em;font-weight:500;border:1px solid var(--k);padding:1px 8px;margin-left:10px;vertical-align:middle}
+  .r.tie .who::after{content:"동점";font-size:.6em;font-weight:500;border:1px solid var(--k);padding:1px 8px;margin-left:10px;vertical-align:middle}
+  .rbot{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--k);padding-top:14px;flex-wrap:wrap}
+  .rbot .info{font-size:16px}
+  .rbot .btns{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* 창 */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:10}
+  .modal.on{display:flex}
+  .modal .box{background:var(--w);border:1px solid var(--k);padding:28px;width:min(420px,92vw)}
+  .modal h3{font-size:22px}
+  .modal p{color:var(--g);font-size:15px;margin:8px 0 16px;font-weight:400}
+  .modal .err{margin-top:8px;min-height:20px;text-align:left;font-size:14px}
+  .modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--k);color:var(--w);padding:10px 18px;display:none;z-index:20}
+</style>
+</head>
+<body>
+
+<!-- 설정 -->
+<section class="screen on" id="setup">
+  <div class="page">
+    <h1>학생회 투표</h1>
+    <p class="lead">화면의 후보를 눌러서 투표합니다. 키보드는 쓰지 않아요.</p>
+
+    <div class="sec">
+      <h2>선거 이름</h2>
+      <div class="field"><input type="text" id="title" value="전교 학생회 임원 선거"></div>
+    </div>
+
+    <div class="sec">
+      <h2>후보</h2>
+      <p class="note">한 줄에 한 명씩, 기호 순서대로 적어 주세요. 학생은 위 항목부터 차례로 투표합니다.</p>
+      <div id="offices"></div>
+      <div class="actions" style="justify-content:flex-start"><button id="addOffice">항목 추가</button></div>
+    </div>
+
+    <div class="sec">
+      <h2>투표 설정</h2>
+      <div class="three">
+        <div class="field"><label for="voters">투표자 수</label><input type="number" id="voters" min="1" max="3000" value="300">
+          <div class="note">다 채우면 자동으로 끝납니다.</div></div>
+        <div class="field"><label for="delay">다음 투표까지 (초)</label><input type="number" id="delay" min="1" max="9" value="3">
+          <div class="note">같은 학생이 또 누르는 것을 막습니다.</div></div>
+        <div class="field"><label for="pin">관리자 비밀번호</label><input type="password" id="pin" inputmode="numeric" maxlength="8" placeholder="숫자 4자리">
+          <div class="note">중간 종료, 결과 확인에 씁니다.</div></div>
+      </div>
+      <label class="check"><input type="checkbox" id="confirmStep" checked> 누른 다음 ‘투표하기’를 한 번 더 누르게 하기</label>
+      <label class="check"><input type="checkbox" id="blank"> ‘기권’ 칸 넣기</label>
+      <label class="check"><input type="checkbox" id="sound" checked> 투표가 끝나면 소리 내기</label>
+    </div>
+
+    <p class="err" id="setupErr"></p>
+    <div class="actions"><button class="fill big" id="toConfirm">다음</button></div>
+  </div>
+</section>
+
+<!-- 확인 -->
+<section class="screen" id="confirm">
+  <div class="mid">
+    <h1>이대로 시작할까요?</h1>
+    <p class="sub">시작하면 설정을 바꿀 수 없습니다.</p>
+    <dl class="sum" id="summary"></dl>
+    <div class="actions">
+      <button class="big" id="back">고치기</button>
+      <button class="fill big" id="toGuide">시작</button>
+    </div>
+  </div>
+</section>
+
+<!-- 안내 -->
+<section class="screen" id="guide">
+  <div class="mid">
+    <h1>투표하는 방법</h1>
+    <ol class="how" id="how"></ol>
+    <div class="actions">
+      <button class="big" id="fsBtn">전체 화면</button>
+      <button class="fill big" id="startVote">투표 시작</button>
+    </div>
+    <p class="sub" style="font-size:14px">전체 화면을 켜 두면 학생이 다른 창을 누르지 않아요. 안 켜지면 F11을 누르세요.</p>
+  </div>
+</section>
+
+<!-- 투표 -->
+<section class="screen" id="vote">
+  <div class="vtop">
+    <h1 id="vOffice"></h1>
+    <span class="step" id="vStep"></span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="vfoot">
+    <span id="vCount"></span>
+    <button class="text" id="adminBtn">관리자</button>
+  </div>
+  <div class="bar" id="bar">
+    <p id="barMsg"></p>
+    <div class="btns">
+      <button id="redo">다시 고르기</button>
+      <button class="fill" id="go">투표하기</button>
+    </div>
+  </div>
+</section>
+
+<!-- 완료 -->
+<section class="screen" id="done">
+  <div class="mid">
+    <h1>투표했습니다</h1>
+    <p class="sub">자리로 돌아가세요.</p>
+    <div class="wait"><i id="waitBar"></i></div>
+  </div>
+</section>
+
+<!-- 종료 -->
+<section class="screen" id="end">
+  <div class="mid">
+    <h1>투표가 끝났습니다</h1>
+    <p class="sub" id="endInfo"></p>
+    <button class="fill big" id="toResult">결과 보기</button>
+  </div>
+</section>
+
+<!-- 결과 -->
+<section class="screen" id="result">
+  <div class="rtop">
+    <h1 id="rOffice"></h1>
+    <div class="tabs" id="tabs"></div>
+  </div>
+  <div class="rows" id="rows"></div>
+  <div class="rbot">
+    <span class="info" id="rInfo"></span>
+    <div class="btns">
+      <button id="replay">다시 개표</button>
+      <button id="copyRes">결과 복사</button>
+      <button class="fill" id="nextOffice">다음 항목</button>
+      <button class="text" id="newVote">새 투표</button>
+    </div>
+  </div>
+</section>
+
+<div class="modal" id="modal"><div class="box">
+  <h3 id="mTitle"></h3><p id="mText"></p>
+  <input type="password" id="mPin" inputmode="numeric" placeholder="관리자 비밀번호">
+  <p class="err" id="mErr"></p>
+  <div class="acts" id="mActs"></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const KEY = 'student-vote-v2';
+  let S = null;
+  let cur = { office:0, picks:[], sel:null, busy:false };
+
+  const store = {
+    save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} },
+    load(){ try{ return JSON.parse(localStorage.getItem(KEY)); }catch(e){ return null; } },
+    clear(){ try{ localStorage.removeItem(KEY); }catch(e){} }
+  };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0,0); }
+  function toast(m){ const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',2000); }
+
+  let ac = null;
+  function ding(){
+    if(!S || !S.sound) return;
+    try{
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      if(ac.state === 'suspended') ac.resume();
+      [880, 1320].forEach((f,i) => {
+        const o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime + i*0.15;
+        o.frequency.value=f; o.connect(g); g.connect(ac.destination);
+        g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.2,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+        o.start(t); o.stop(t+0.55);
+      });
+    }catch(e){}
+  }
+
+  /* 설정 */
+  function addOffice(name='', list=''){
+    const d = document.createElement('div'); d.className='office';
+    d.innerHTML = `<div class="head"><input type="text" class="oname" value="${esc(name)}" placeholder="전교회장"><button class="text del">삭제</button></div>
+      <div class="field" style="margin-top:12px"><textarea class="olist" placeholder="김하늘&#10;이바다&#10;박나래">${esc(list)}</textarea>
+      <div class="count"></div></div>`;
+    const ta = d.querySelector('.olist'), cnt = d.querySelector('.count');
+    const upd = () => cnt.textContent = `${ta.value.split('\n').map(s=>s.trim()).filter(Boolean).length}명`;
+    ta.addEventListener('input', upd); upd();
+    d.querySelector('.del').onclick = () => { if($('#offices').children.length > 1) d.remove(); else toast('항목이 하나는 있어야 해요'); };
+    $('#offices').appendChild(d);
+  }
+  function resetSetup(){ $('#offices').innerHTML=''; addOffice('전교회장'); addOffice('전교부회장'); }
+  $('#addOffice').onclick = () => addOffice();
+
+  $('#toConfirm').onclick = () => {
+    const err = $('#setupErr'); err.textContent='';
+    const offices = [...document.querySelectorAll('.office')].map(o => ({
+      name: o.querySelector('.oname').value.trim(),
+      cands: o.querySelector('.olist').value.split('\n').map(s=>s.trim()).filter(Boolean)
+    }));
+    for(const [i,o] of offices.entries()){
+      if(!o.name) return err.textContent = `${i+1}번째 항목 이름이 비어 있어요.`;
+      if(!o.cands.length) return err.textContent = `${o.name} 후보를 적어 주세요.`;
+      if(o.cands.length > 24) return err.textContent = `${o.name} 후보는 24명까지 됩니다.`;
+    }
+    const voters = parseInt($('#voters').value,10), delay = parseInt($('#delay').value,10), pin = $('#pin').value.trim();
+    if(!(voters >= 1)) return err.textContent = '투표자 수를 적어 주세요.';
+    if(!(delay >= 1 && delay <= 9)) return err.textContent = '다음 투표까지 시간은 1~9초입니다.';
+    if(!/^\d{4,8}$/.test(pin)) return err.textContent = '관리자 비밀번호를 숫자 4자리 이상으로 정해 주세요.';
+    S = { title: $('#title').value.trim() || '학생회 선거', offices, voters, delay, pin,
+          confirmStep: $('#confirmStep').checked, blank: $('#blank').checked, sound: $('#sound').checked,
+          tallies: offices.map(o => Array(o.cands.length + 1).fill(0)), voted:0, started:false, finished:false };
+    const row = (k,v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+    $('#summary').innerHTML = row('선거 이름', esc(S.title)) +
+      S.offices.map(o => row(esc(o.name), o.cands.map((c,j)=>`${j+1} ${esc(c)}`).join(', '))).join('') +
+      row('투표자 수', `${S.voters}명`) + row('다음 투표까지', `${S.delay}초`) +
+      row('그 밖에', [S.confirmStep?'한 번 더 확인':'누르면 바로 투표', S.blank?'기권 칸 있음':null, S.sound?'소리 켬':'소리 끔'].filter(Boolean).join(', '));
+    show('confirm');
+  };
+  $('#back').onclick = () => show('setup');
+  $('#toGuide').onclick = () => {
+    const names = S.offices.map(o => esc(o.name)).join(', ');
+    const li = [`투표할 후보의 <b>번호 칸</b>을 누릅니다.`];
+    if(S.confirmStep) li.push(`이름이 맞으면 <b>투표하기</b>를 누릅니다.`);
+    if(S.offices.length > 1) li.push(`${names} 순서로 모두 투표합니다.`);
+    li.push(`화면이 까맣게 바뀌면 자리로 돌아갑니다.`);
+    $('#how').innerHTML = li.map(t => `<li>${t}</li>`).join('');
+    show('guide');
+  };
+  $('#fsBtn').onclick = () => {
+    try{ const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if(p) p.catch(()=>toast('F11을 눌러 주세요')); else toast('F11을 눌러 주세요'); }
+    catch(e){ toast('F11을 눌러 주세요'); }
+  };
+  $('#startVote').onclick = () => { S.started = true; store.save(); next(); };
+
+  /* 투표 */
+  function next(){ cur = { office:0, picks:[], sel:null, busy:false }; drawOffice(); show('vote'); }
+  function drawOffice(){
+    const o = S.offices[cur.office];
+    $('#vOffice').textContent = o.name;
+    $('#vStep').textContent = S.offices.length > 1
+      ? `${cur.office+1} / ${S.offices.length}` + (cur.office < S.offices.length-1 ? ` · 다음은 ${S.offices[cur.office+1].name}` : '')
+      : '';
+    const items = o.cands.map((c,i) => ({ i, n: i+1, nm: c }));
+    if(S.blank) items.push({ i: o.cands.length, n: '기권', nm: '', blank: true });
+    const k = items.length;
+    const cols = k<=3 ? k : k===4 ? 4 : k<=6 ? 3 : k<=8 ? 4 : k<=12 ? 4 : k<=15 ? 5 : 6;
+    const g = $('#grid'); g.style.gridTemplateColumns = `repeat(${cols}, minmax(0,1fr))`;
+    g.innerHTML = items.map(it => `<button class="cand${it.blank?' blank':''}" data-i="${it.i}"><span class="n">${it.n}</span>${it.nm?`<span class="nm">${esc(it.nm)}</span>`:''}</button>`).join('');
+    g.querySelectorAll('.cand').forEach(b => b.onclick = () => pick(+b.dataset.i));
+    cur.sel = null; $('#bar').classList.remove('on');
+    $('#vCount').textContent = `${S.voted} / ${S.voters}`;
+  }
+  function pick(i){
+    if(cur.busy) return;
+    cur.sel = i;
+    if(!S.confirmStep) return commit();
+    document.querySelectorAll('.cand').forEach(b => b.classList.toggle('on', +b.dataset.i === i));
+    const o = S.offices[cur.office];
+    $('#barMsg').textContent = i < o.cands.length ? `${i+1}번 ${o.cands[i]} 맞나요?` : '기권 맞나요?';
+    $('#bar').classList.add('on');
+  }
+  $('#redo').onclick = () => { if(cur.busy) return; cur.sel=null; document.querySelectorAll('.cand').forEach(b=>b.classList.remove('on')); $('#bar').classList.remove('on'); };
+  $('#go').onclick = () => { if(cur.sel != null && !cur.busy) commit(); };
+
+  function commit(){
+    cur.busy = true;
+    cur.picks[cur.office] = cur.sel;
+    if(cur.office < S.offices.length - 1){
+      cur.office++;
+      setTimeout(() => { cur.busy = false; drawOffice(); }, 200);
+      return;
+    }
+    cur.picks.forEach((p,oi) => S.tallies[oi][p]++);   // 모든 항목을 마친 뒤 한 번에 기록
+    S.voted++; store.save();
+    ding(); show('done');
+    const ms = S.delay * 1000, w = $('#waitBar');
+    w.style.transition='none'; w.style.width='0';
+    requestAnimationFrame(() => requestAnimationFrame(() => { w.style.transition=`width ${ms}ms linear`; w.style.width='100%'; }));
+    setTimeout(() => S.voted >= S.voters ? finish() : next(), ms);
+  }
+  function finish(){
+    S.finished = true; store.save();
+    $('#endInfo').textContent = `${S.title} · ${S.voted}명 투표`;
+    show('end');
+  }
+
+  document.addEventListener('keydown', e => {
+    const id = document.querySelector('.screen.on').id;
+    if(['vote','done','end'].includes(id) && !$('#modal').classList.contains('on')) e.preventDefault();
+  });
+  document.addEventListener('contextmenu', e => { if(document.querySelector('.screen.on').id !== 'setup') e.preventDefault(); });
+  window.addEventListener('beforeunload', e => { if(S && S.started && !S.finished){ e.preventDefault(); e.returnValue=''; } });
+
+  /* 관리자 창 */
+  function ask(title, text, list, needPin = true){
+    $('#mTitle').textContent = title; $('#mText').textContent = text;
+    $('#mPin').value=''; $('#mErr').textContent=''; $('#mPin').style.display = needPin ? 'block' : 'none';
+    const a = $('#mActs'); a.innerHTML='';
+    list.forEach(([label, cls, fn]) => {
+      const b = document.createElement('button'); b.textContent = label; if(cls) b.className = cls;
+      b.onclick = () => {
+        if(!fn){ close(); return; }
+        if(needPin && $('#mPin').value !== S.pin){ $('#mErr').textContent = '비밀번호가 틀렸어요.'; return; }
+        close(); fn();
+      };
+      a.appendChild(b);
+    });
+    $('#modal').classList.add('on'); if(needPin) setTimeout(() => $('#mPin').focus(), 50);
+  }
+  function close(){ $('#modal').classList.remove('on'); }
+  $('#mPin').addEventListener('keydown', e => { if(e.key === 'Enter'){ const b = $('#mActs .fill'); b && b.click(); } });
+
+  $('#adminBtn').onclick = () => ask('관리자', '비밀번호를 넣고 고르세요.', [['취소','',null],['지금 끝내기','fill',finish]]);
+  $('#toResult').onclick = () => ask('결과 보기', '비밀번호를 넣으면 개표를 시작합니다.', [['취소','',null],['개표','fill',() => { ri = 0; drawResult(); }]]);
+  $('#newVote').onclick = () => ask('새 투표', '지금 결과가 지워집니다.', [['취소','',null],['지우기','fill',() => { store.clear(); S=null; resetSetup(); show('setup'); }]]);
+
+  /* 결과 */
+  let ri = 0, timer = null;
+  function drawResult(){
+    show('result');
+    const o = S.offices[ri];
+    $('#rOffice').textContent = `${o.name} 개표`;
+    $('#tabs').innerHTML = S.offices.length > 1 ? S.offices.map((x,i) => `<button class="${i===ri?'cur':''}" data-i="${i}">${esc(x.name)}</button>`).join('') : '';
+    $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { ri = +b.dataset.i; drawResult(); });
+    $('#nextOffice').style.display = ri < S.offices.length - 1 ? '' : 'none';
+    count();
+  }
+  $('#nextOffice').onclick = () => { ri++; drawResult(); };
+  $('#replay').onclick = () => count();
+
+  // 후보 수와 화면 높이에 맞춰 줄 높이·단 수를 정함. 그래도 넘치면 스크롤.
+  function fitRows(n){
+    const box = $('#rows');
+    box.classList.remove('two'); box.style.gridTemplateRows = '';
+    const H = box.clientHeight - 36, MIN = 34;
+    let per = n, gap = n > 8 ? 6 : 14;
+    if(n > 8 && n * MIN + gap * (n-1) > H && box.clientWidth >= 900){
+      per = Math.ceil(n / 2); box.classList.add('two');
+      box.style.gridTemplateRows = `repeat(${per}, var(--rh))`;
+    }
+    const rh = Math.max(MIN, Math.min(90, (H - gap * (per-1)) / per));
+    box.style.setProperty('--rh', rh + 'px'); box.style.setProperty('--gap', gap + 'px');
+  }
+  window.addEventListener('resize', () => { if(S && $('#result').classList.contains('on')) fitRows(S.offices[ri].cands.length); });
+
+  function count(){
+    clearTimeout(timer);
+    const o = S.offices[ri], t = S.tallies[ri];
+    const rows = o.cands.map((c,i) => ({ i, nm:c, v:t[i], now:0 }));
+    const blank = t[o.cands.length] || 0;
+    const max = Math.max(1, ...rows.map(r => r.v));
+    const box = $('#rows'), n = rows.length;
+    box.innerHTML = rows.map(r => `<div class="r" id="r${r.i}"><span class="who"><b>${r.i+1}</b>${esc(r.nm)}</span><div class="track"><div class="fill"></div></div><span class="c">0</span></div>`).join('');
+    fitRows(n);
+    $('#rInfo').textContent = '개표 중';
+    const speed = Math.max(25, Math.min(250, 9000 / max));
+    const paint = r => { const el = $('#r'+r.i); el.querySelector('.fill').style.width = (r.now/max*100)+'%'; el.querySelector('.c').textContent = r.now; };
+    rows.filter(r => r.v === 0).forEach(r => $('#r'+r.i).classList.add('out'));
+    const tick = () => {
+      const stopped = [];
+      rows.forEach(r => { if(r.now < r.v){ r.now++; if(r.now === r.v) stopped.push(r); } paint(r); });
+      const going = rows.filter(r => r.now < r.v);
+      stopped.forEach(r => $('#r'+r.i).classList.add('out'));
+      if(!going.length) return end(rows, blank);
+      timer = setTimeout(tick, stopped.length ? 700 : speed);   // 누군가 멈추면 잠깐 쉼
+    };
+    timer = setTimeout(tick, 600);
+  }
+  function end(rows, blank){
+    const top = Math.max(...rows.map(r => r.v));
+    const w = rows.filter(r => r.v === top && top > 0);
+    rows.forEach(r => $('#r'+r.i).classList.toggle('out', !w.includes(r)));
+    w.forEach(r => $('#r'+r.i).classList.add(w.length === 1 ? 'win' : 'tie'));
+    const o = S.offices[ri];
+    let msg = w.length === 1 ? `당선 ${w[0].i+1}번 ${w[0].nm}` : w.length > 1 ? `동점 ${w.map(r=>`${r.i+1}번`).join(', ')}` : '표 없음';
+    msg += ` · 투표 ${S.voted}명` + (S.blank ? ` · 기권 ${blank}` : '');
+    $('#rInfo').textContent = msg;
+  }
+  $('#copyRes').onclick = () => {
+    const L = [S.title, `투표 ${S.voted}명`];
+    S.offices.forEach((o,oi) => {
+      L.push('', o.name);
+      o.cands.forEach((c,i) => L.push(`${i+1}번 ${c} ${S.tallies[oi][i]}표`));
+      if(S.blank) L.push(`기권 ${S.tallies[oi][o.cands.length]}표`);
+    });
+    const txt = L.join('\n');
+    const fb = () => { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); toast('복사했어요'); }catch(e){ toast('복사가 안 돼요'); } ta.remove(); };
+    try{ navigator.clipboard.writeText(txt).then(() => toast('복사했어요'), fb); }catch(e){ fb(); }
+  };
+
+  /* 처음 열 때 */
+  resetSetup();
+  const saved = store.load();
+  if(saved && saved.started){
+    S = saved;
+    ask('하던 투표가 있어요', `${saved.title} · ${saved.voted} / ${saved.voters}명`, [
+      ['새로 시작','',() => { store.clear(); S=null; }],
+      [saved.finished ? '결과 보기 화면으로' : '이어서 하기','fill', () => saved.finished ? finish() : next()]
+    ], false);
+  }
+})();
+</script>
+</body>
+</html>
